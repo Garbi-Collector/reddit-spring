@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #faf8ef;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #776e65;
+            margin-bottom: 20px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 15px;
+            background: #bbada0;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            margin: 0 auto;
+        }
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 15px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .grid-cell {
+            background-color: rgba(205, 193, 180, 0.35);
+            border-radius: 5px;
+        }
+        .tile {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            border-radius: 5px;
+            position: absolute;
+            transition: all 0.15s ease-in-out;
+            color: #776e65;
+            z-index: 2;
+        }
+        .tile-empty {
+            background-color: transparent;
+            opacity: 0;
+        }
+        .tile-2 { background-color: #eee4da; }
+        .tile-4 { background-color: #ede0c8; }
+        .tile-8 { background-color: #f2b179; color: white; }
+        .tile-16 { background-color: #f59563; color: white; }
+        .tile-32 { background-color: #f67c5f; color: white; }
+        .tile-64 { background-color: #f65e3b; color: white; }
+        .tile-128 { background-color: #edcf72; color: white; }
+        .tile-256 { background-color: #edcc61; color: white; }
+        .tile-512 { background-color: #edc850; color: white; }
+        .tile-1024 { background-color: #edc53f; color: white; }
+        .tile-2048 { background-color: #edc22e; color: white; }
+        .instructions {
+            margin-top: 20px;
+            color: #776e65;
+            text-align: center;
+        }
+        .score {
+            font-size: 24px;
+            color: #776e65;
+            margin-bottom: 10px;
+        }
+        .control-buttons {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background-color: #8f7a66;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .control-button:hover {
+            background-color: #9f8a76;
+        }
+        #btnUp { grid-area: up; }
+        #btnDown { grid-area: down; }
+        #btnLeft { grid-area: left; }
+        #btnRight { grid-area: right; }
+        .new-tile {
+            transform: scale(0);
+            animation: pop-in 0.2s ease-out forwards;
+        }
+        .merged-tile {
+            animation: merge 0.2s ease-out;
+        }
+        @keyframes pop-in {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        @keyframes merge {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 500px) {
+            .board, .tile {
+                width: 80px;
+                height: 80px;
+                grid-template-columns: repeat(4, 80px);
+                grid-template-rows: repeat(4, 80px);
+            }
+            .tile {
+                font-size: 28px;
+            }
+            .control-button {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>2048</h1>
+    <div class="score">Puntuación: <span id="score">0</span></div>
+    <div class="board" id="board">
+        <div class="grid-overlay">
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+            <div class="grid-cell"></div>
+        </div>
+    </div>
+    <p class="instructions">Usa las teclas de flecha o los botones para jugar</p>
+    <div class="control-buttons">
+        <button id="btnUp" class="control-button">↑</button>
+        <button id="btnDown" class="control-button">↓</button>
+        <button id="btnLeft" class="control-button">←</button>
+        <button id="btnRight" class="control-button">→</button>
+    </div>
+</div>
+
+<script>
+    const board = document.getElementById("board");
+    const scoreElement = document.getElementById("score");
+    const btnUp = document.getElementById("btnUp");
+    const btnDown = document.getElementById("btnDown");
+    const btnLeft = document.getElementById("btnLeft");
+    const btnRight = document.getElementById("btnRight");
+
+    let grid = Array(4).fill().map(() => Array(4).fill(0));
+    let score = 0;
+
+    function getTileClass(num) {
+        return num === 0 ? 'tile tile-empty' : `tile tile-${num}`;
+    }
+
+    function drawBoard() {
+        const existingTiles = board.querySelectorAll('.tile:not(.grid-cell)');
+        existingTiles.forEach(tile => tile.remove());
+
+        grid.forEach((row, rowIndex) => {
+            row.forEach((num, colIndex) => {
+                if (num !== 0) {
+                    const tile = document.createElement("div");
+                    tile.className = getTileClass(num);
+                    tile.textContent = num;
+                    tile.style.left = `${colIndex * 115}px`;
+                    tile.style.top = `${rowIndex * 115}px`;
+                    tile.classList.add('new-tile');
+                    board.appendChild(tile);
+                }
+            });
+        });
+    }
+
+    function addRandomTile() {
+        let emptyTiles = [];
+        grid.forEach((row, r) => row.forEach((num, c) => {
+            if (num === 0) emptyTiles.push({r, c});
+        }));
+        if (emptyTiles.length > 0) {
+            let {r, c} = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+            grid[r][c] = Math.random() > 0.1 ? 2 : 4;
+        }
+    }
+
+    function slide(row) {
+        let arr = row.filter(num => num);
+        let merged = new Array(row.length).fill(false);
+        let result = new Array(row.length).fill(0);
+        let resultIndex = 0;
+
+        for (let i = 0; i < arr.length; i++) {
+            if (resultIndex > 0 && result[resultIndex - 1] === arr[i] && !merged[resultIndex - 1]) {
+                result[resultIndex - 1] *= 2;
+                score += result[resultIndex - 1];
+                merged[resultIndex - 1] = true;
+            } else {
+                result[resultIndex] = arr[i];
+                resultIndex++;
+            }
+        }
+
+        return result;
+    }
+
+    function move(direction) {
+        let newGrid = Array(4).fill().map(() => Array(4).fill(0));
+        let moved = false;
+
+        for (let r = 0; r < 4; r++) {
+            let row = grid[r];
+            if (direction === "left") {
+                newGrid[r] = slide(row);
+                if (JSON.stringify(row) !== JSON.stringify(newGrid[r])) moved = true;
+            }
+            if (direction === "right") {
+                let reversedRow = row.slice().reverse();
+                let slidResult = slide(reversedRow);
+                newGrid[r] = slidResult.slice().reverse();
+                if (JSON.stringify(row) !== JSON.stringify(newGrid[r])) moved = true;
+            }
+        }
+
+        for (let c = 0; c < 4; c++) {
+            let col = [grid[0][c], grid[1][c], grid[2][c], grid[3][c]];
+            if (direction === "up") {
+                let newCol = slide(col);
+                newGrid[0][c] = newCol[0];
+                newGrid[1][c] = newCol[1];
+                newGrid[2][c] = newCol[2];
+                newGrid[3][c] = newCol[3];
+                if (JSON.stringify(col) !== JSON.stringify(newCol)) moved = true;
+            }
+            if (direction === "down") {
+                let reversedCol = col.slice().reverse();
+                let slidResult = slide(reversedCol);
+                newGrid[0][c] = slidResult[3];
+                newGrid[1][c] = slidResult[2];
+                newGrid[2][c] = slidResult[1];
+                newGrid[3][c] = slidResult[0];
+                if (JSON.stringify(col) !== JSON.stringify(slidResult.slice().reverse())) moved = true;
+            }
+        }
+
+        if (moved) {
+            grid = newGrid;
+            addRandomTile();
+            drawBoard();
+            scoreElement.textContent = score;
+        }
+    }
+
+    // Keyboard Controls
+    document.addEventListener("keydown", (e) => {
+        switch(e.key) {
+            case "ArrowLeft": move("left"); break;
+            case "ArrowRight": move("right"); break;
+            case "ArrowUp": move("up"); break;
+            case "ArrowDown": move("down"); break;
+        }
+    });
+
+    // Button Controls
+    btnUp.addEventListener("click", () => move("up"));
+    btnDown.addEventListener("click", () => move("down"));
+    btnLeft.addEventListener("click", () => move("left"));
+    btnRight.addEventListener("click", () => move("right"));
+
+    addRandomTile();
+    addRandomTile();
+    drawBoard();
+</script>
+</body>
+</html>
